@@ -16,13 +16,14 @@ What to build:
 
 Estimated effort: low.
 
-## Option 2: Streamlit Dashboard
+## Option 2: HTML/CSS Web Dashboard
 
-Best for: quickly turning the project into a visual app.
+Best for: turning the project into a proper browser app while keeping full control over the UI.
 
 What to build:
 
-- Upload CSV of trades
+- HTML/CSS dashboard
+- Trade entry form
 - Interactive filters by stock, industry, and date
 - Profit/loss charts
 - Portfolio summary cards
@@ -32,11 +33,12 @@ Estimated effort: medium.
 
 Recommended stack:
 
-- Python
-- Streamlit
-- Pandas
-- MySQL or SQLite
-- Plotly
+- FastAPI
+- HTML
+- CSS
+- JavaScript
+- MySQL or PostgreSQL
+- Chart.js
 
 ## Option 3: Full Web App
 
@@ -89,3 +91,5 @@ Recommended stack:
 ## Recommended Path
 
 Start with Option 1, then move to Option 2. This keeps the original project recognizable while making it more useful and easier to demo.
+
+For the full collaboration roadmap, see `docs/upgrade-plan.md`.
