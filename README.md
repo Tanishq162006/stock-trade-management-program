@@ -1,10 +1,31 @@
 # Stock Trade Management Program
 
-This repository preserves and modernizes a high school Computer Science project: a Python and MySQL stock trade management program.
+This repository preserves and upgrades a high school Computer Science project completed in 2024: a Python and MySQL stock trade management program.
+
+The original version was built as a Class XII Computer Science project for managing stock transactions, calculating profit/loss, filtering records, and showing charts. The current goal is to keep that original work credited and intact while upgrading it into a more complete modern application.
 
 The original project report is stored at:
 
 - `docs/original-stock-trade-management-report.pdf`
+
+## Current Upgrade Plan
+
+Right now, this repo is planned as a collaborative upgrade from the original school project into a browser-based stock portfolio app.
+
+The upgrade direction is:
+
+- Keep the original Python/MySQL CLI project as the foundation.
+- Clean up the code structure and calculation logic.
+- Build a proper HTML/CSS web dashboard.
+- Add a FastAPI backend.
+- Add real stock market data support.
+- Add portfolio analytics.
+- Add experimental AI/forecasting features.
+
+The full roadmap is in:
+
+- `docs/upgrade-plan.md`
+- `docs/build-options.md`
 
 ## What It Does
 
@@ -24,8 +45,9 @@ The app tracks stock transactions and supports:
 ```text
 .
 ├── docs/
+│   ├── build-options.md
 │   ├── original-stock-trade-management-report.pdf
-│   └── build-options.md
+│   └── upgrade-plan.md
 ├── src/
 │   └── stock_trade_management.py
 ├── .env.example
@@ -60,7 +82,19 @@ python src/stock_trade_management.py
 
 ## Next Build Options
 
-See `docs/build-options.md` for practical ways to build on top of this project, from a small cleanup to a full web dashboard.
+See `docs/build-options.md` for practical ways to build on top of this project, from a small cleanup to a full HTML/CSS web dashboard.
+
+See `docs/upgrade-plan.md` for the full team collaboration plan.
+
+## Collaboration
+
+This repo is intended for teammate collaboration during the upgrade. Contributors should:
+
+- Work on feature branches.
+- Keep `main` stable.
+- Open pull requests for major changes.
+- Add their names to `CREDITS.md`.
+- Avoid committing passwords, API keys, `.env` files, or private data.
 
 ## Credits
 
