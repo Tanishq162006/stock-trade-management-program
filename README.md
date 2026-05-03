@@ -49,6 +49,9 @@ The app tracks stock transactions and supports:
 │   ├── original-stock-trade-management-report.pdf
 │   └── upgrade-plan.md
 ├── src/
+│   ├── static/
+│   ├── templates/
+│   ├── web_app.py
 │   └── stock_trade_management.py
 ├── .env.example
 ├── CREDITS.md
@@ -74,10 +77,22 @@ pip install -r requirements.txt
 
 3. Copy `.env.example` to `.env` and update your MySQL settings.
 
-4. Run the app:
+4. Run the original CLI app:
 
 ```bash
 python src/stock_trade_management.py
+```
+
+5. Run the upgraded web app:
+
+```bash
+uvicorn src.web_app:app --reload
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000
 ```
 
 ## Next Build Options

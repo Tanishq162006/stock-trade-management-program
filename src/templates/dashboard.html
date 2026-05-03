@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stock Trade Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">2024 high school project upgrade</p>
+        <h1>Stock Trade Management</h1>
+      </div>
+      <nav aria-label="Main navigation">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#add-trade">Add Trade</a>
+        <a href="#trades">Trades</a>
+      </nav>
+    </header>
+
+    <main>
+      {% if db_error %}
+        <section class="notice error">
+          <h2>Database Connection Needed</h2>
+          <p>{{ db_error }}</p>
+          <p>Check your MySQL database and `.env` settings, then reload this page.</p>
+        </section>
+      {% endif %}
+
+      {% if error %}
+        <section class="notice error">
+          <h2>Could Not Save Trade</h2>
+          <p>{{ error }}</p>
+        </section>
+      {% endif %}
+
+      <section id="dashboard" class="summary-grid" aria-label="Portfolio summary">
+        <article class="metric">
+          <span>Overall P/L</span>
+          <strong class="{{ 'positive' if summary.profit_loss > 0 else 'negative' if summary.profit_loss < 0 else '' }}">
+            {{ money(summary.profit_loss) }}
+          </strong>
+        </article>
+        <article class="metric">
+          <span>Trades</span>
+          <strong>{{ summary.trade_count }}</strong>
+        </article>
+        <article class="metric">
+          <span>Total Volume</span>
+          <strong>{{ money(summary.total_volume) }}</strong>
+        </article>
+        <article class="metric">
+          <span>Industries</span>
+          <strong>{{ summary.industry_count }}</strong>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <section class="panel chart-panel" aria-label="Industry profit and loss chart">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Analytics</p>
+              <h2>Industry Profit/Loss</h2>
+            </div>
+          </div>
+          <div class="chart-box">
+            <canvas id="industryChart"></canvas>
+          </div>
+        </section>
+
+        <section class="panel chart-panel" aria-label="Monthly profit and loss chart">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Timeline</p>
+              <h2>Monthly Profit/Loss</h2>
+            </div>
+          </div>
+          <div class="chart-box">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </section>
+      </section>
+
+      <section class="workspace">
+        <section id="add-trade" class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Entry</p>
+              <h2>Add Trade</h2>
+            </div>
+          </div>
+          <form class="trade-form" method="post" action="/trades">
+            <label>
+              Stock Name
+              <input name="stock_name" type="text" placeholder="TCS" required>
+            </label>
+            <label>
+              Trade Date
+              <input name="trade_date" type="date" required>
+            </label>
+            <label>
+              Type
+              <select name="trade_type" required>
+                <option value="Buy">Buy</option>
+                <option value="Sell">Sell</option>
+              </select>
+            </label>
+            <label>
+              Price
+              <input name="price" type="number" min="0.01" step="0.01" placeholder="100.50" required>
+            </label>
+            <label>
+              Quantity
+              <input name="quantity" type="number" min="1" step="1" placeholder="10" required>
+            </label>
+            <label>
+              Industry
+              <input name="industry" type="text" placeholder="Technology" required>
+            </label>
+            <button type="submit">Save Trade</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Breakdown</p>
+              <h2>Industry Summary</h2>
+            </div>
+          </div>
+          <div class="table-wrap compact">
+            <table>
+              <thead>
+                <tr>
+                  <th>Industry</th>
+                  <th>Profit/Loss</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in industry_rows %}
+                  <tr>
+                    <td>{{ row.industry }}</td>
+                    <td class="{{ 'positive' if row.profit_loss > 0 else 'negative' if row.profit_loss < 0 else '' }}">
+                      {{ money(row.profit_loss) }}
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="2">No industry data yet.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="trades" class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Records</p>
+            <h2>Trade History</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Stock</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Industry</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for trade in trades %}
+                <tr>
+                  <td>{{ trade.stock_id }}</td>
+                  <td>{{ trade.stock_name }}</td>
+                  <td>{{ trade.trade_date }}</td>
+                  <td><span class="badge {{ trade.trade_type|lower }}">{{ trade.trade_type }}</span></td>
+                  <td>{{ money(trade.price) }}</td>
+                  <td>{{ trade.quantity }}</td>
+                  <td>{{ trade.industry }}</td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="7">No trades yet. Add the first trade above.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      window.stockTradeData = {
+        industryLabels: {{ industry_labels | tojson }},
+        industryValues: {{ industry_values | tojson }},
+        monthLabels: {{ month_labels | tojson }},
+        monthValues: {{ month_values | tojson }}
+      };
+    </script>
+    <script src="{{ url_for('static', path='dashboard.js') }}"></script>
+  </body>
+</html>
