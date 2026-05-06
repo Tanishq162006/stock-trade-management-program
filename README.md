@@ -49,6 +49,9 @@ The app tracks stock transactions and supports:
 │   ├── original-stock-trade-management-report.pdf
 │   └── upgrade-plan.md
 ├── src/
+│   ├── static/
+│   ├── templates/
+│   ├── web_app.py
 │   └── stock_trade_management.py
 ├── .env.example
 ├── CREDITS.md
@@ -72,13 +75,42 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Copy `.env.example` to `.env` and update your MySQL settings.
+3. Copy `.env.example` to `.env` and update settings if needed.
 
-4. Run the app:
+The upgraded web app uses local SQLite by default so it can be tested without setting up MySQL first. The original CLI still uses MySQL.
+
+4. Run the original CLI app:
 
 ```bash
 python src/stock_trade_management.py
 ```
+
+5. Run the upgraded web app:
+
+```bash
+uvicorn src.web_app:app --reload
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000
+```
+
+The web app currently includes:
+
+- Demo user / portfolio switching
+- Add and delete trades
+- CSV import/export
+- Sample data loader
+- Dashboard cards
+- Industry and monthly charts
+- Market price lookup with an offline fallback
+- Portfolio value estimate
+- Best/worst stock analysis
+- Simple trend signal and forecast chart
+
+Market prices use a deterministic offline fallback by default so classroom demos stay fast. To try live prices, install `yfinance` and set `ENABLE_LIVE_PRICES=true` in `.env`.
 
 ## Next Build Options
 

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stock Trade Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">2024 high school project upgrade</p>
+        <h1>Stock Trade Management</h1>
+      </div>
+      <nav aria-label="Main navigation">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#trades">Trades</a>
+        <a href="#analytics">Analytics</a>
+        <a href="#forecast">Forecast</a>
+      </nav>
+    </header>
+
+    <main>
+      {% if error %}
+        <section class="notice error">
+          <h2>Action Needed</h2>
+          <p>{{ error }}</p>
+        </section>
+      {% endif %}
+
+      <section class="panel account-panel">
+        <div>
+          <p class="eyebrow">Portfolio</p>
+          <h2>{{ user.name }}</h2>
+          <p class="muted">{{ user.email }}</p>
+        </div>
+        <form class="inline-form" method="post" action="/users">
+          <input name="name" type="text" placeholder="Name" required>
+          <input name="email" type="email" placeholder="email@example.com" required>
+          <button type="submit">Switch User</button>
+        </form>
+      </section>
+
+      <section id="dashboard" class="summary-grid" aria-label="Portfolio summary">
+        <article class="metric">
+          <span>Realized P/L</span>
+          <strong class="{{ 'positive' if summary.profit_loss > 0 else 'negative' if summary.profit_loss < 0 else '' }}">{{ money(summary.profit_loss) }}</strong>
+        </article>
+        <article class="metric">
+          <span>Portfolio Value</span>
+          <strong>{{ money(summary.portfolio_value) }}</strong>
+        </article>
+        <article class="metric">
+          <span>Trade Volume</span>
+          <strong>{{ money(summary.total_volume) }}</strong>
+        </article>
+        <article class="metric">
+          <span>Monthly Volatility</span>
+          <strong>{{ money(summary.volatility) }}</strong>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <section id="add-trade" class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Entry</p>
+              <h2>Add Trade</h2>
+            </div>
+          </div>
+          <form class="trade-form" method="post" action="/trades">
+            <label>Stock Name<input name="stock_name" type="text" placeholder="Infosys" required></label>
+            <label>Ticker<input name="ticker" type="text" placeholder="INFY.NS" required></label>
+            <label>Trade Date<input name="trade_date" type="date" required></label>
+            <label>Type<select name="trade_type" required><option value="Buy">Buy</option><option value="Sell">Sell</option></select></label>
+            <label>Price<input name="price" type="number" min="0.01" step="0.01" placeholder="1480.00" required></label>
+            <label>Quantity<input name="quantity" type="number" min="1" step="1" placeholder="8" required></label>
+            <label>Industry<input name="industry" type="text" placeholder="Technology" required></label>
+            <button type="submit">Save Trade</button>
+          </form>
+        </section>
+
+        <section class="panel actions-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Data</p>
+              <h2>Import, Export, Seed</h2>
+            </div>
+          </div>
+          <div class="action-stack">
+            <form method="post" action="/seed">
+              <button type="submit">Load Sample Data</button>
+            </form>
+            <a class="button-link" href="/trades/export">Export CSV</a>
+            <form class="upload-form" method="post" action="/trades/import" enctype="multipart/form-data">
+              <input name="file" type="file" accept=".csv" required>
+              <button type="submit">Import CSV</button>
+            </form>
+          </div>
+        </section>
+      </section>
+
+      <section class="workspace" id="analytics">
+        <section class="panel chart-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Allocation</p>
+              <h2>Industry Profit Share</h2>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="industryChart"></canvas></div>
+        </section>
+
+        <section class="panel chart-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Timeline</p>
+              <h2>Monthly Profit/Loss</h2>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="monthlyChart"></canvas></div>
+        </section>
+      </section>
+
+      <section class="workspace">
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Holdings</p>
+              <h2>Market Data</h2>
+            </div>
+          </div>
+          <div class="table-wrap compact">
+            <table>
+              <thead>
+                <tr><th>Ticker</th><th>Qty</th><th>Latest</th><th>Value</th></tr>
+              </thead>
+              <tbody>
+                {% for holding in holdings %}
+                  <tr>
+                    <td>{{ holding.ticker }}</td>
+                    <td>{{ holding.quantity }}</td>
+                    <td>{{ money(prices.get(holding.ticker, 0)) }}</td>
+                    <td>{{ money((prices.get(holding.ticker, 0) or 0) * holding.quantity) }}</td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="4">No holdings yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Performance</p>
+              <h2>Best / Worst</h2>
+            </div>
+          </div>
+          <div class="callout-grid">
+            <article>
+              <span>Best Stock</span>
+              <strong>{{ best_worst.best.label if best_worst.best else "None" }}</strong>
+              <p class="{{ 'positive' if best_worst.best and best_worst.best.profit_loss > 0 else 'negative' if best_worst.best and best_worst.best.profit_loss < 0 else '' }}">{{ money(best_worst.best.profit_loss) if best_worst.best else money(0) }}</p>
+            </article>
+            <article>
+              <span>Worst Stock</span>
+              <strong>{{ best_worst.worst.label if best_worst.worst else "None" }}</strong>
+              <p class="negative">{{ money(best_worst.worst.profit_loss) if best_worst.worst else money(0) }}</p>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <section class="workspace" id="forecast">
+        <section class="panel chart-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Experimental</p>
+              <h2>Forecast {{ forecast.ticker or "" }}</h2>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="forecastChart"></canvas></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Signal</p>
+              <h2>Moving Average</h2>
+            </div>
+          </div>
+          <p class="signal">{{ forecast.signal }}</p>
+          <p class="muted">Forecasting is educational only and is not financial advice.</p>
+        </section>
+      </section>
+
+      <section id="trades" class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Records</p>
+            <h2>Trade History</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Stock</th><th>Ticker</th><th>Date</th><th>Type</th><th>Price</th><th>Qty</th><th>Industry</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for trade in trades %}
+                <tr>
+                  <td>{{ trade.trade_id }}</td>
+                  <td>{{ trade.stock_name }}</td>
+                  <td>{{ trade.ticker }}</td>
+                  <td>{{ trade.trade_date }}</td>
+                  <td><span class="badge {{ trade.trade_type|lower }}">{{ trade.trade_type }}</span></td>
+                  <td>{{ money(trade.price) }}</td>
+                  <td>{{ trade.quantity }}</td>
+                  <td>{{ trade.industry }}</td>
+                  <td>
+                    <form method="post" action="/trades/{{ trade.trade_id }}/delete">
+                      <button class="danger-button" type="submit">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% else %}
+                <tr><td colspan="9">No trades yet. Add one or load sample data.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      window.stockTradeData = {{ chart | tojson }};
+    </script>
+    <script src="{{ url_for('static', path='dashboard.js') }}"></script>
+  </body>
+</html>
