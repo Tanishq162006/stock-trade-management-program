@@ -1,44 +1,54 @@
 # Stock Trade Management Program
 
-This repository preserves and upgrades a high school Computer Science project completed in 2024: a Python and MySQL stock trade management program.
+A Class XII Computer Science school project (2024) upgraded into a browser-based stock portfolio web app. The original CLI code is preserved and credited; the new web app runs on top of it.
 
-The original version was built as a Class XII Computer Science project for managing stock transactions, calculating profit/loss, filtering records, and showing charts. The current goal is to keep that original work credited and intact while upgrading it into a more complete modern application.
+Original project report: `docs/original-stock-trade-management-report.pdf`
 
-The original project report is stored at:
+---
 
-- `docs/original-stock-trade-management-report.pdf`
+## What Has Been Built
 
-## Current Upgrade Plan
+### Original CLI (preserved)
+`src/stock_trade_management.py` — the original school project. Connects to MySQL, runs a text menu, and supports:
 
-Right now, this repo is planned as a collaborative upgrade from the original school project into a browser-based stock portfolio app.
+- Add buy/sell stock records
+- View all records, filter by date range
+- Overall, stock-wise, industry-wise, period-wise, and monthly profit/loss
+- matplotlib industry pie chart and profit/loss line chart
 
-The upgrade direction is:
+### Web App (new — merged from `feature/html-dashboard`)
+A FastAPI + SQLite web dashboard that runs in the browser without needing MySQL.
 
-- Keep the original Python/MySQL CLI project as the foundation.
-- Clean up the code structure and calculation logic.
-- Build a proper HTML/CSS web dashboard.
-- Add a FastAPI backend.
-- Add real stock market data support.
-- Add portfolio analytics.
-- Add experimental AI/forecasting features.
+**`src/web_app.py`** — FastAPI application with routes for:
 
-The full roadmap is in:
+| Route | What it does |
+|-------|-------------|
+| `GET /` | Dashboard with summary cards and charts |
+| `POST /add` | Add a new trade |
+| `POST /delete/{id}` | Delete a trade |
+| `GET /export` | Download all trades as CSV |
+| `POST /import` | Upload a CSV of trades |
+| `POST /load-sample` | Load built-in sample data |
+| `GET /switch-user` | Switch between demo user portfolios |
 
-- `docs/upgrade-plan.md`
-- `docs/build-options.md`
+**`src/portfolio_logic.py`** — pure Python calculation library (no database dependency):
 
-## What It Does
+- `total_profit_loss` — overall P&L across all trades
+- `total_volume` — total money transacted
+- `group_profit_loss` — P&L grouped by any field (stock, industry, etc.)
+- `monthly_profit_loss` — P&L broken down by month
+- `holdings_by_ticker` — net share holdings per ticker
+- `portfolio_value` — current market value of open positions
+- `best_and_worst` — highest and lowest performing stocks
+- `simple_volatility` — standard deviation of a price series
+- `linear_forecast` — simple linear regression forecast for next N periods
+- `moving_average_signal` — Uptrend / Downtrend / Flat signal from moving averages
 
-The app tracks stock transactions and supports:
+**`tests/test_portfolio_logic.py`** — pytest unit tests covering all calculation functions.
 
-- Adding buy/sell stock records
-- Viewing all stock records
-- Filtering records by date range
-- Calculating overall profit/loss
-- Calculating stock-wise, industry-wise, period-wise, and monthly profit/loss
-- Showing stocks by industry
-- Plotting industry profit/loss
-- Showing an industry profit pie chart
+**`src/templates/dashboard.html`** + **`src/static/`** — HTML/CSS/JS dashboard with Chart.js charts.
+
+---
 
 ## Project Structure
 
@@ -50,83 +60,119 @@ The app tracks stock transactions and supports:
 │   └── upgrade-plan.md
 ├── src/
 │   ├── static/
+│   │   ├── dashboard.js        # Chart.js chart rendering
+│   │   └── styles.css          # Dashboard styles
 │   ├── templates/
-│   ├── web_app.py
-│   └── stock_trade_management.py
+│   │   └── dashboard.html      # Main web UI
+│   ├── portfolio_logic.py      # Pure Python P&L calculations
+│   ├── web_app.py              # FastAPI web application
+│   └── stock_trade_management.py  # Original CLI (MySQL)
+├── tests/
+│   └── test_portfolio_logic.py # pytest unit tests
 ├── .env.example
 ├── CREDITS.md
 ├── README.md
 └── requirements.txt
 ```
 
-## Setup
+---
 
-1. Create a MySQL database:
+## Setup & Running
 
-```sql
-CREATE DATABASE stock_trade;
-```
+### Web App (recommended — no MySQL needed)
 
-2. Create a Python virtual environment and install dependencies:
+Install dependencies globally:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+pip install fastapi uvicorn jinja2 python-multipart python-dotenv matplotlib mysql-connector-python
 ```
 
-3. Copy `.env.example` to `.env` and update settings if needed.
-
-The upgraded web app uses local SQLite by default so it can be tested without setting up MySQL first. The original CLI still uses MySQL.
-
-4. Run the original CLI app:
+Copy the env file:
 
 ```bash
-python src/stock_trade_management.py
+cp .env.example .env
 ```
 
-5. Run the upgraded web app:
+Run the web app:
 
 ```bash
 uvicorn src.web_app:app --reload
 ```
 
-Then open:
+Open in browser:
 
-```text
+```
 http://127.0.0.1:8000
 ```
 
-The web app currently includes:
+The web app uses **SQLite by default** — the database file is created automatically at `data/stock_trade.db`. No MySQL setup needed.
 
-- Demo user / portfolio switching
-- Add and delete trades
-- CSV import/export
-- Sample data loader
-- Dashboard cards
-- Industry and monthly charts
-- Market price lookup with an offline fallback
-- Portfolio value estimate
-- Best/worst stock analysis
-- Simple trend signal and forecast chart
+To change the database path, set `SQLITE_DB_PATH` in `.env`.
 
-Market prices use a deterministic offline fallback by default so classroom demos stay fast. To try live prices, install `yfinance` and set `ENABLE_LIVE_PRICES=true` in `.env`.
+### Original CLI App (MySQL required)
 
-## Next Build Options
+Set up a MySQL database:
 
-See `docs/build-options.md` for practical ways to build on top of this project, from a small cleanup to a full HTML/CSS web dashboard.
+```sql
+CREATE DATABASE stock_trade;
+```
 
-See `docs/upgrade-plan.md` for the full team collaboration plan.
+Fill in MySQL credentials in `.env`:
+
+```
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=yourpassword
+DB_NAME=stock_trade
+```
+
+Run the CLI:
+
+```bash
+python src/stock_trade_management.py
+```
+
+### Run Tests
+
+```bash
+pip install pytest
+pytest tests/ -v
+```
+
+### Live Market Prices (optional)
+
+By default the web app uses an offline price fallback (deterministic, based on ticker hash) so demos work without internet. To enable live prices:
+
+```bash
+pip install yfinance
+```
+
+Then set in `.env`:
+
+```
+ENABLE_LIVE_PRICES=true
+```
+
+---
+
+## What's Next
+
+See `docs/upgrade-plan.md` for the full 6-phase roadmap. Remaining phases:
+
+- **Phase 3** — User authentication, multi-user accounts, watchlist
+- **Phase 4** — Real ticker symbols, realized vs. unrealized P&L, Alpha Vantage / yfinance integration
+- **Phase 5** — Sector allocation, volatility dashboard, CSV/PDF export, moving averages
+- **Phase 6** — AI forecasting, backtesting, model comparison
+
+---
 
 ## Collaboration
 
-This repo is intended for teammate collaboration during the upgrade. Contributors should:
-
-- Work on feature branches.
-- Keep `main` stable.
-- Open pull requests for major changes.
-- Add their names to `CREDITS.md`.
-- Avoid committing passwords, API keys, `.env` files, or private data.
+- Work on feature branches (`feature/...`)
+- Keep `main` stable
+- Open pull requests before merging
+- Add your name to `CREDITS.md`
+- Never commit `.env`, passwords, or API keys
 
 ## Credits
 
